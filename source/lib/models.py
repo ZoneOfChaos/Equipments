@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 class Equipment(BaseModel):
-    id: int
     serial_number: str
     equipment_name: str
     equipment_type: str
