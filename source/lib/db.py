@@ -1,51 +1,53 @@
 from motor.motor_asyncio import AsyncIOMotorClient as MongoClient
 from dotenv import dotenv_values
+from pprint import pprint
 
-# read .env file
-hostname = dotenv_values('.env')['MONGODB_HOSTNAME']
-port = int(dotenv_values('.env')['MONGODB_PORT'])
-db_name = dotenv_values('.env')['MONGODB_DB']
-collection_name = dotenv_values('.env')['MONGODB_COLLECTION']
-
+ 
 class MongoDBConnectionManager: 
-    def __init__(self, hostname: str, port: int): 
-        self.hostname: str = hostname
-        self.port: int = port 
+    def __init__(self): 
+        self.hostname: str = str(dotenv_values('.env')['MONGODB_HOSTNAME'])
+        self.port: int = int(dotenv_values('.env')['MONGODB_PORT'])
         self.connection = None
         print('✅ Open Connected With MongoDB...')
 
     def __enter__(self): 
-        self.connection = MongoClient(self.hostname, self.port) 
+        self.connection = MongoClient(self.hostname, self.port)
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback): 
-        self.connection.close()
-        print('❌ Close Connected With MongoDB...')      
+        if self.connection is not None:
+            self.connection.close()
+            print('❌ Close Connected With MongoDB...')
+        else:
+            print('❗️ ❗️ ❗️ MongoDB Connection Fault ❗️ ❗️ ❗️')
 
 
 # CRUD
-class MongoDBCRUD:
+class EquipmentCRUD:
+    def __init__(self):
+        self.hostname: str = str(dotenv_values('.env')['MONGODB_HOSTNAME'])
+        self.port: int = int(dotenv_values('.env')['MONGODB_PORT'])
+        self.db = MongoClient(self.hostname, self.port)[str(dotenv_values('.env')['MONGODB_DB'])]
+        self.collection = str(dotenv_values('.env')['MONGODB_COLLECTION'])
 
-    def insert_data( equipment: dict):
-        with MongoDBConnectionManager(hostname, port):
-            db = MongoClient(hostname, port)[db_name]
-            db[collection_name].insert_one(equipment)
+    def insert_data( self, equipment: dict) -> None:
+        with MongoDBConnectionManager():
+            self.db[self.collection].insert_one(equipment)
             print('🟢 Insert Data To MongoDB...')
 
-    def find_data(serial_number: str):
-        with MongoDBConnectionManager(hostname, port):
-            db = MongoClient(hostname, port)[db_name]
-            db[collection_name].find_one(serial_number)
-            print('🔵 Find Data From MongoDB...')
+    async def find_data(self, serial: dict):
+            async with MongoDBConnectionManager():
+                pprint(await self.db[self.collection].find({'lang':'Python'}))
+                print('🔵 Find Data From MongoDB...')
 
-    def update_data(serial_number, equipment):
-        with MongoDBConnectionManager(hostname, port):
-            db = MongoClient(hostname, port)[db_name]
-            db[collection_name].update_one(serial_number, equipment)
+    def update_data(self, serial_number: str, equipment: dict) -> None:
+        with MongoDBConnectionManager():
+            self.db[self.collection].update_one(serial_number, equipment)
             print('🟣 Update Data To MongoDB...')
 
-    def delete_data(serial_number):
-        with MongoDBConnectionManager(hostname, port):
-            db = MongoClient(hostname, port)[db_name]
-            db[collection_name].delete_one(serial_number)
+    def delete_data(self, serial_number: str) -> None:
+        with MongoDBConnectionManager():
+            self.db[self.collection].delete_one(serial_number)
             print('🔴 Delete Data From MongoDB...')
+
+EquipmentCRUD().find_data(serial = {'lang':'Python'})
